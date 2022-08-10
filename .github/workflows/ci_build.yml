@@ -1,19 +1,31 @@
-name: CI Build
+name: Test Build
 
 on:
   push:
-  workflow_dispatch:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
 
 jobs:
-  build:
-    runs-on: ubuntu-18.04
-
+  synthesis:
+    runs-on: ubuntu-latest
+    container: raetro/quartus:17.1
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Build
-      run: set -o pipefail && curl --fail --location https://raw.githubusercontent.com/MiSTer-unstable-nightlies/Build-Automation_MiSTer/main/build.sh | bash -
-      env:
-        REPOSITORY: ${{ github.repository }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        DISPATCH_TOKEN: ${{ secrets.BUILD_AUTOMATION_DISPATCH_TOKEN }}
+      # 1 - Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      # 2 - RTL synthesis
+      - name: Run compilation flow
+        run: quartus_sh --flow compile Saturn.qpf
+      # 3 - Upload artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: OutputFiles.zip
+          path: output_files/
